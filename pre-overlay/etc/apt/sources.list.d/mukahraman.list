@@ -1,6 +1,0 @@
-# Custom debs for Samsung Galaxy Tab S7+ Wi-Fi (gts7xlwifi) Droidian port.
-# Both repos are flat-format (Packages.gz + Release at the URL root).
-# [trusted=yes] skips GPG verification — these are personal-build URLs.
-
-deb [trusted=yes] https://mukahraman.github.io/kernel_samsung_sm8250/ ./
-deb [trusted=yes] https://mukahraman.github.io/adaptation-samsung-gts7xlwifi/ ./
