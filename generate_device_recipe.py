@@ -10,6 +10,8 @@ import yaml
 import json
 
 import datetime
+import subprocess
+from pathlib import Path
 
 from itertools import chain
 
@@ -132,6 +134,29 @@ def get_matrix(contents):
 		)
 	)
 
+def local_package_specs(packages, arch):
+    """Use exact versions from the local archive instead of distro candidates."""
+    versions = {}
+    for package in sorted((Path(BUILDER_MAIN_DIRECTORY) / "apt").glob("*.deb")):
+        fields = subprocess.check_output(
+            ["dpkg-deb", "-f", str(package), "Package", "Version", "Architecture"],
+            text=True,
+        )
+        info = dict(line.split(": ", 1) for line in fields.splitlines())
+        if info["Architecture"] not in (arch, "all"):
+            continue
+        name = info["Package"]
+        if name in versions and versions[name] != info["Version"]:
+            raise ValueError(f"Multiple local versions of {name}")
+        versions[name] = info["Version"]
+    result = []
+    for package in packages:
+        name = package.split("=", 1)[0]
+        if name in versions:
+            package = f"{name}={versions[name]}"
+        result.append(package)
+    return result
+
 def generate_recipe_for_product(contents, product, arch, edition, variant, apilevel, droidian_variant=None):
 	"""
 	Generates a debos recipe for the given product
@@ -191,14 +216,14 @@ def generate_recipe_for_product(contents, product, arch, edition, variant, apile
 				f.write(
 					TEMPLATE_IMAGE_ADAPTATION % {
 						"architecture" : arch,
-						"packages" : " ".join(config["packages"])
+						"packages" : " ".join(local_package_specs(config["packages"], arch))
 					}
 				)
 		elif config["type"] == "image":
 			f.write(
 				TEMPLATE_IMAGE_ADAPTATION % {
 					"architecture" : arch,
-					"packages" : " ".join(config["packages"])
+					"packages" : " ".join(local_package_specs(config["packages"], arch))
 				}
 			)
 

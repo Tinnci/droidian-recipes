@@ -1,3 +1,6 @@
 generated/
 out/
 *.zip
+
+__pycache__/
+*.pyc
